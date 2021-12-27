@@ -1,0 +1,238 @@
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<!------ Include the above in your HEAD tag ---------->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Chat</title>
+	<link rel="stylesheet" href="/css/style.css">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="socket.io/socket.io.js"></script>
+	<script src="/js/js.js"></script>
+	<script>
+		var socket = io("http://localhost:3000")
+
+
+		socket.on("List-friend-in-room-server", (data) => {
+			$("#contacts_body").html("");
+			data.forEach((i) => {
+				$("#contacts_body").append(`<ui class="contacts">
+															<li class="active">
+																<div class="d-flex bd-highlight">
+																	<div class="img_cont">
+																		<img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+																			class="rounded-circle user_img">
+																		<span class="online_icon"></span>
+																	</div>
+																	<div class="user_info">
+																		<span>`+ i.nickname + `</span>
+																		<p>${i.nickname} đang online trong ${i.room}</p>
+																	</div>
+																</div>
+															</li>
+														</ui>`);
+			})
+
+
+			// <span class="msg_time">`+ data.name + `  -  ` + new Date().getHours() + `:` + new Date().getMinutes() + `</span>
+		});
+
+		socket.on("Server-send-data", (data) => {
+			$("#listMess").append(`<div id="listMess" class="d-flex justify-content-start mb-4">
+							<div class="img_cont_msg">
+								<img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+									class="rounded-circle user_img_msg">
+							</div>
+							<div class="msg_cotainer">
+							`+ data.ten + `: ` + data.noidung +`
+								
+							</div>
+						</div>`);
+
+			// <span class="msg_time">`+ data.name + `  -  ` + new Date().getHours() + `:` + new Date().getMinutes() + `</span>
+		});
+		socket.on("login-room-server", (data) => {
+			$("#user_info").html("");
+			$("#user_info").append(`<span>${data}</span>`);
+
+			// <span class="msg_time">`+ data.name + `  -  ` + new Date().getHours() + `:` + new Date().getMinutes() + `</span>
+		});
+
+
+
+
+		$(document).ready(() => {
+
+			$("#btnSend").click(() => {
+				socket.emit("Client-send-data", $("#txtMess").val());
+				$("#txtMess").val("");
+			})
+
+			$("#txtMess").keypress((e) => {
+				if (e.which == 13) {
+					socket.emit("Client-send-data", $("#txtMess").val());
+					$("#txtMess").val("");
+					// $("#listMess").scrollTop($("#listMess")[0].scrollHeight-50);
+					$('#listMess').stop().animate({
+						scrollTop: $('#listMess')[0].scrollHeight
+					}, 400);
+				}
+
+			})
+
+			$("#dangnhapbtn").click(() => {
+
+				socket.emit("login-room-client", {
+					nickname: $("#txtNickName").val(),
+					room: $("#txtRoomName").val()
+				});
+				if ($("#txtNickName").val().length != 0) {
+					$("#roomlist").hide();
+					$("#chatbox").show();
+				}
+
+				socket.on("login-room-success-server", (data) => {
+					if (data.length != 0) {
+						alert("Bạn chưa nhập tên")
+					}
+				});
+			})
+
+			$("#backbnt").click(() => {
+
+				socket.emit("logout-room-client");
+				// $("#roomlist").show();
+				// $("#chatbox").hide();
+				location.reload();
+			})
+
+
+			$("#listMess").scrollTop($("#listMess")[0].scrollHeight);
+
+
+		});
+	</script>
+</head>
+<!--Coded With Love By Mutiullah Samim-->
+
+<body>
+	<div id="roomlist" class="roomlist">
+		<div id="dangnhapForm" class="container-fluid h-100 dangnhapForm">
+			<div class="row justify-content-center h-100 ">
+				<div class="col-md-8 col-xl-5 dn">
+					<div class="card mb-sm-3 mb-md-0 ">
+						<div class="card-body ">
+							<div>
+								<h2 class="danhnhaplb">Đăng nhập</h2>
+							</div>
+							{{!-- <form action=""> --}}
+								<input id="txtNickName" type="text" class="form-control userInput"
+									placeholder="Nhập nick name"></input>
+								<select name="" id="txtRoomName" class="form-control matkhauinput">
+									<option value="ROOM1">Phòng 1</option>
+									<option value="ROOM2">Phòng 2</option>
+									<option value="ROOM3">Phòng 3</option>
+									<option value="ROOM4">Phòng 4</option>
+									<option value="ROOM5">Phòng 5</option>
+								</select>
+								<input type="button" id="dangnhapbtn" class="dangnhapbtn" value="Vào phòng"></input>
+								{{!--
+							</form> --}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="chatbox" class="chatbox">
+		<div class="container-fluid h-100 homechat">
+			<div class="row justify-content-center h-100">
+				<!-- List friend -->
+				<div class="col-md-4 col-xl-3 chat">
+					<div class="card mb-sm-3 mb-md-0 contacts_card">
+						<div class="card-header">
+							<div class="input-group">
+								<input type="text" placeholder="Search..." name="" class="form-control search">
+								<div class="input-group-prepend">
+									<span class="input-group-text search_btn"><i class="fas fa-search"></i></span>
+								</div>
+							</div>
+						</div>
+						<div class="card-body contacts_body" id="contacts_body">
+							{{!-- <ui class="contacts">
+								<li class="active">
+									<div class="d-flex bd-highlight">
+										<div class="img_cont">
+											<img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+												class="rounded-circle user_img">
+											<span class="online_icon"></span>
+										</div>
+										<div class="user_info">
+											<span>Hoàng Bình</span>
+											<p>Hoàng Bình Đang Online</p>
+										</div>
+									</div>
+								</li>
+							</ui> --}}
+						</div>
+						<div class="card-footer"></div>
+					</div>
+				</div>
+				<!-- BOX CHAT -->
+				<div class="col-md-8 col-xl-6 chat messBox">
+					<div class="card">
+						<div class="card-header msg_head">
+							<div class="d-flex bd-highlight">
+								<i class="fas fa-arrow-left icon_back" id="backbnt"></i>
+								<div id="img_cont" class="img_cont">
+									<img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+										class="rounded-circle user_img">
+									<span class="online_icon"></span>
+								</div>
+								<div class="user_info" id="user_info">
+									{{!-- <span>Hoàng Bình</span>
+									<p>1767 Messages</p> --}}
+								</div>
+								<!-- nút call -->
+								<!-- <div class="video_cam">
+								<span><i class="fas fa-video"></i></span>
+								<span><i class="fas fa-phone"></i></span>
+							</div> -->
+							</div>
+							<span id="action_menu_btn"><i class="fas fa-ellipsis-v"></i></span>
+
+							<div class="action_menu">
+								<ul>
+									<li><i class="fas fa-user-circle"></i>Xem thông tin</li>
+									<li><i class="fas fa-users"></i> Xóa Bạn</li>
+									<li><i class="fas fa-plus"></i> Thêm Vào nhóm</li>
+									<li><i class="fas fa-ban"></i> Chặn</li>
+								</ul>
+							</div>
+						</div>
+						<div id="listMess" class="card-body msg_card_body">
+
+						</div>
+						<div class="card-footer">
+							<div class="input-group">
+								<div class="input-group-append">
+									<span class="input-group-text attach_btn"><i class="fas fa-paperclip"></i></span>
+								</div>
+								<input id="txtMess" name="" class="form-control type_msg"
+									placeholder="Type your message..."></input>
+								<div class="input-group-append" id="btnSend">
+									<span class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
